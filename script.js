@@ -14,7 +14,7 @@ canvas.style.width = "360px";
 canvas.style.height = "360px";
 
 const frame = new Image();
-frame.src = frameSelect.value;   // ডিফল্ট ফ্রেম
+frame.src = frameSelect.value;
 
 const userImage = new Image();
 let imgX = CANVAS_SIZE / 2;
@@ -23,9 +23,29 @@ let imgW = 0;
 let imgH = 0;
 let scale = 1;
 
+// ---------------- DRAW ----------------
 function draw() {
     ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
+    // ---- গোল ফ্রেম হলে MASK চালু ----
+    const isCircle =
+        frameSelect.value === "frame2.png" ||
+        frameSelect.value === "frame3.png";
+
+    if (isCircle) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(
+            CANVAS_SIZE / 2,   // center X
+            CANVAS_SIZE / 2,   // center Y
+            CANVAS_SIZE / 2,   // radius
+            0,
+            Math.PI * 2
+        );
+        ctx.clip();
+    }
+
+    // ---- ছবি আঁকুন ----
     if (userImage.src) {
         const drawW = imgW * scale;
         const drawH = imgH * scale;
@@ -39,9 +59,13 @@ function draw() {
         );
     }
 
+    if (isCircle) ctx.restore();
+
+    // ---- ফ্রেম সবশেষে আঁকুন ----
     ctx.drawImage(frame, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 }
 
+// ---------------- EVENTS ----------------
 frame.onload = draw;
 
 upload.addEventListener("change", function () {
@@ -56,19 +80,16 @@ upload.addEventListener("change", function () {
                 CANVAS_SIZE / userImage.width,
                 CANVAS_SIZE / userImage.height
             );
-
             imgW = userImage.width * ratio;
             imgH = userImage.height * ratio;
             imgX = CANVAS_SIZE / 2;
             imgY = CANVAS_SIZE / 2;
-
             draw();
         };
     };
     reader.readAsDataURL(file);
 });
 
-// 🔄 ফ্রেম সিলেক্ট করলে ফ্রেম বদলাবে
 frameSelect.addEventListener("change", () => {
     frame.src = frameSelect.value;
 });
@@ -97,6 +118,7 @@ canvas.addEventListener("mousemove", e => {
 canvas.addEventListener("mouseup", () => isDragging = false);
 canvas.addEventListener("mouseleave", () => isDragging = false);
 
+// Touch
 canvas.addEventListener("touchstart", e => {
     isDragging = true;
     const t = e.touches[0];
@@ -117,6 +139,7 @@ canvas.addEventListener("touchmove", e => {
 
 canvas.addEventListener("touchend", () => isDragging = false);
 
+// Download
 downloadBtn.addEventListener("click", () => {
     const link = document.createElement("a");
     link.download = "framed-photo.png";
