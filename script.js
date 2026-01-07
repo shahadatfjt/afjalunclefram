@@ -8,15 +8,14 @@ let userImg = new Image();
 let frameImg = new Image();
 frameImg.src = 'frame.png'; // আপনার ফ্রেমের ফাইলের নাম এখানে দিন
 
-canvas.width = 1000;
-canvas.height = 1000;
+// ক্যানভাস সাইজ আপনার ফ্রেমের সাইজ অনুযায়ী ১০৮০x১০৮০ করা হলো
+canvas.width = 1080;
+canvas.height = 1080;
 
-let imgX = 500, imgY = 500, imgScale = 1;
+let imgScale = 1;
 
-// ফ্রেম লোড হলে ক্যানভাসে দেখাবে
 frameImg.onload = () => draw();
 
-// ছবি আপলোড করলে
 upload.onchange = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -26,9 +25,13 @@ upload.onchange = (e) => {
     reader.readAsDataURL(file);
 };
 
-userImg.onload = () => draw();
+userImg.onload = () => {
+    // ছবি আপলোড হলে জুম লেভেল ডিফল্ট ১ করে দেওয়া
+    zoomInput.value = 1;
+    imgScale = 1;
+    draw();
+};
 
-// জুম স্লাইডার পরিবর্তন করলে
 zoomInput.oninput = () => {
     imgScale = zoomInput.value;
     draw();
@@ -38,20 +41,22 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (userImg.src) {
+        // ছবিটিকে ক্যানভাসের মাঝখানে রেখে জুম করার লজিক
         let w = userImg.width * imgScale;
         let h = userImg.height * imgScale;
-        // ছবি মাঝখানে বসানো
-        ctx.drawImage(userImg, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+        let x = (canvas.width - w) / 2;
+        let y = (canvas.height - h) / 2;
+        
+        ctx.drawImage(userImg, x, y, w, h);
     }
 
-    // ফ্রেম সবসময় ছবির উপরে থাকবে
-    ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+    // ফ্রেমটি সবসময় উপরে থাকবে
+    ctx.drawImage(frameImg, 0, 0, 1080, 1080);
 }
 
-// ডাউনলোড ফাংশন
 downloadBtn.onclick = () => {
     const link = document.createElement('a');
-    link.download = 'framed-photo.png';
-    link.href = canvas.toDataURL();
+    link.download = 'shadat-design-frame.png'; // ডাউনলোড করা ফাইলের নাম
+    link.href = canvas.toDataURL("image/png");
     link.click();
 };
