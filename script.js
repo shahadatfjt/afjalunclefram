@@ -1,62 +1,100 @@
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const upload = document.getElementById('upload');
-const zoomInput = document.getElementById('zoom');
-const downloadBtn = document.getElementById('download');
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const upload = document.getElementById("upload");
+const zoom = document.getElementById("zoom");
+const downloadBtn = document.getElementById("download");
 
-let userImg = new Image();
-let frameImg = new Image();
-frameImg.src = 'frame.png'; // আপনার ফ্রেমের ফাইলের নাম এখানে দিন
+const frame = new Image();
+frame.src = "frame.png";
 
-// ক্যানভাস সাইজ আপনার ফ্রেমের সাইজ অনুযায়ী ১০৮০x১০৮০ করা হলো
-canvas.width = 1080;
-canvas.height = 1080;
+let userImage = new Image();
+let scale = 1;
 
-let imgScale = 1;
+// ছবির অবস্থান
+let imgX = 0;
+let imgY = 0;
 
-frameImg.onload = () => draw();
+// drag state
+let isDragging = false;
+let startX, startY;
 
-upload.onchange = (e) => {
-    const file = e.target.files[0];
+upload.addEventListener("change", function () {
+    const file = this.files[0];
     const reader = new FileReader();
-    reader.onload = (event) => {
-        userImg.src = event.target.result;
+
+    reader.onload = function () {
+        userImage.src = reader.result;
+        userImage.onload = () => {
+            imgX = canvas.width / 2;
+            imgY = canvas.height / 2;
+            draw();
+        };
     };
     reader.readAsDataURL(file);
-};
+});
 
-userImg.onload = () => {
-    // ছবি আপলোড হলে জুম লেভেল ডিফল্ট ১ করে দেওয়া
-    zoomInput.value = 1;
-    imgScale = 1;
+zoom.addEventListener("input", function () {
+    scale = zoom.value;
     draw();
-};
+});
 
-zoomInput.oninput = () => {
-    imgScale = zoomInput.value;
+// 🖱️ Mouse events
+canvas.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    startX = e.offsetX - imgX;
+    startY = e.offsetY - imgY;
+});
+
+canvas.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    imgX = e.offsetX - startX;
+    imgY = e.offsetY - startY;
     draw();
-};
+});
+
+canvas.addEventListener("mouseup", () => isDragging = false);
+canvas.addEventListener("mouseleave", () => isDragging = false);
+
+// 📱 Touch events (mobile)
+canvas.addEventListener("touchstart", (e) => {
+    isDragging = true;
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    startX = touch.clientX - rect.left - imgX;
+    startY = touch.clientY - rect.top - imgY;
+});
+
+canvas.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    imgX = touch.clientX - rect.left - startX;
+    imgY = touch.clientY - rect.top - startY;
+    draw();
+});
+
+canvas.addEventListener("touchend", () => isDragging = false);
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (userImg.src) {
-        // ছবিটিকে ক্যানভাসের মাঝখানে রেখে জুম করার লজিক
-        let w = userImg.width * imgScale;
-        let h = userImg.height * imgScale;
-        let x = (canvas.width - w) / 2;
-        let y = (canvas.height - h) / 2;
-        
-        ctx.drawImage(userImg, x, y, w, h);
-    }
+    const size = canvas.width * scale;
 
-    // ফ্রেমটি সবসময় উপরে থাকবে
-    ctx.drawImage(frameImg, 0, 0, 1080, 1080);
+    ctx.drawImage(
+        userImage,
+        imgX - size / 2,
+        imgY - size / 2,
+        size,
+        size
+    );
+
+    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
 }
 
-downloadBtn.onclick = () => {
-    const link = document.createElement('a');
-    link.download = 'shadat-design-frame.png'; // ডাউনলোড করা ফাইলের নাম
+downloadBtn.addEventListener("click", function () {
+    const link = document.createElement("a");
+    link.download = "framed-photo.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
-};
+});
